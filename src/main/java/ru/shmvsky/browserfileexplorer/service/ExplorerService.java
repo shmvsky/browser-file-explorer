@@ -4,13 +4,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.shmvsky.browserfileexplorer.configuration.ExplorerConfiguration;
 import ru.shmvsky.browserfileexplorer.exception.ExplorerRuntimeException;
+import ru.shmvsky.browserfileexplorer.model.ContentVO;
+import ru.shmvsky.browserfileexplorer.model.FileVO;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ExplorerService {
@@ -18,46 +21,76 @@ public class ExplorerService {
     @Autowired
     private ExplorerConfiguration explorerConfiguration;
 
-    private String processPathToDir(String pathStr) {
+    private File getDirectory(String dirPath) throws ExplorerRuntimeException {
 
+        Path dirPathObj;
         try {
-            Paths.get(pathStr);
+            dirPathObj = Paths.get(dirPath).normalize();
         } catch (InvalidPathException ex) {
-            throw new ExplorerRuntimeException(ex.getCause());
+            throw new ExplorerRuntimeException("Incorrect path");
         }
 
-        String linuxLikePathStr = pathStr.replaceAll("(\\w:/)", "/");
+        Path baseDirPath = Paths.get(explorerConfiguration.getBaseDirPath());
 
-        boolean isAbsolute = linuxLikePathStr.startsWith(explorerConfiguration.getBaseDirPath());
+        Path dirPathResolved = baseDirPath.resolve(dirPathObj);
 
-        return isAbsolute ? linuxLikePathStr : explorerConfiguration.getBaseDirPath() + linuxLikePathStr;
+        Path realDirPath;
+        try {
+            realDirPath = dirPathResolved.toRealPath();
+        } catch (IOException | SecurityException ex) {
+            throw new ExplorerRuntimeException("Folder does not exist");
+        }
+
+        if (realDirPath.compareTo(baseDirPath) < 0) {
+            throw new ExplorerRuntimeException("No access");
+        }
+
+        return realDirPath.toFile();
     }
 
-    public List<File> buildContent(String pathToDir) throws ExplorerRuntimeException {
+    private File getParentDir(File dir, File baseDir) {
+        File parentDir = dir.getParentFile();
+        if (!parentDir.equals(baseDir) && dir.getParentFile() != null && parentDir.compareTo(baseDir) > 0) {
+            return parentDir;
+        }
+        return baseDir;
+    }
 
-        File f = new File(processPathToDir(pathToDir));
+    private Deque<File> makeBreadCrumb(File dir, File baseDir) {
+        Deque<File> breadCrumb = new ArrayDeque<>();
 
-        return Arrays.asList(f.listFiles());
+        while (!dir.equals(baseDir)) {
+            breadCrumb.addFirst(dir);
+            dir = dir.getParentFile();
+        }
 
+        return breadCrumb;
+    }
 
+    public List<File> getFiles(File dir) {
+        return Arrays.asList(dir.listFiles());
+    }
 
-//        File baseDir = new File(explorerConfiguration.getBaseDirPath());
-//        String[] fileNameStrings = pathToDir.split("/");
-//        File[] pathFiles = new File[fileNameStrings.length];
-//        for (int i = 0; i < fileNameStrings.length; i++) {
-//            pathFiles[i] = new File(pathFiles);
-//        }
+    public Map<String, String> buildMeta() {
+        Map<String, String> meta = new HashMap<>();
+        meta.put("title", explorerConfiguration.getTitle());
+        meta.put("description", explorerConfiguration.getDescription());
+        return meta;
+    }
 
-//        if (pathToDirObj.isAbsolute()) {
-//            childFiles = pathToDirObj.toFile().listFiles();
-//        } else {
-////            Path pathToDirRel = pathToDirObj.resolve(explorerConfiguration.getBaseDirPath());
-//            Path pathToDirRel = Paths.get(explorerConfiguration.getBaseDirPath()).resolve(pathToDirObj);
-//            System.out.println(pathToDirObj + " " + pathToDirRel);
-//            childFiles = pathToDirRel.toFile().listFiles();
-//        }
+    public ContentVO buildContent(String dirPath) throws ExplorerRuntimeException {
+        File dir = getDirectory(dirPath);
+        File baseDir = new File(explorerConfiguration.getBaseDirPath());
+        File parentDir = getParentDir(dir, baseDir);
+        Deque<File> breadCrumb = makeBreadCrumb(dir, baseDir);
+        List<File> files = getFiles(dir);
 
-//        return Arrays.asList(childFiles != null ? childFiles : new File[0]);
+        return new ContentVO(
+                FileVO.fromFile(baseDir),
+                FileVO.fromFile(parentDir),
+                breadCrumb.stream().map(FileVO::fromFile).collect(Collectors.toList()),
+                files.stream().map(FileVO::fromFile).collect(Collectors.toList())
+        );
     }
 
 }

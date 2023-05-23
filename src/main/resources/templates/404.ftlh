@@ -8,8 +8,8 @@
 </head>
 <body>
     <section class="section">
-        <h1 class="title">404</h1>
-        <#--  <p class="subtitle"><a href="/?dir=${baseDir.getPath()}">Return to root</a></p>  -->
+        <h1 class="title">404 - ${errMsg}</h1>
+        <p class="subtitle"><a href="/file-explorer?dir=${baseDirPath}">Return to root</a></p>
     </section>
 </body>
 </html> 

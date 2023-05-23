@@ -4,11 +4,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.File;
-import java.nio.file.InvalidPathException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.InvalidPropertiesFormatException;
 
 @Configuration
 @EnableConfigurationProperties(ExplorerProperties.class)
@@ -16,7 +14,7 @@ public class ExplorerAutoConfiguration {
 
     @Bean
     public ExplorerConfiguration initExplorerConfiguration(ExplorerProperties properties)
-            throws InvalidPathException, SecurityException {
+            throws SecurityException, IOException {
         ExplorerConfiguration configuration = new ExplorerConfiguration();
 
         if (properties.getTitle() != null && !properties.getTitle().isBlank()) {
@@ -28,12 +26,8 @@ public class ExplorerAutoConfiguration {
         }
 
         if (properties.getBaseDirPath() != null) {
-            Path baseDirPathObj = Paths.get(properties.getBaseDirPath()).normalize();
-            File baseDir = baseDirPathObj.toFile();
-            if (!properties.getBaseDirPath().isBlank() && baseDir.exists() && baseDir.isDirectory()) {
-                String linuxLikePath = baseDirPathObj.toString().replaceAll("((\\w:\\\\)|(\\\\))", "/");
-                configuration.setBaseDirPath(linuxLikePath);
-            }
+            Path baseDirRealPath = Paths.get(properties.getBaseDirPath()).toRealPath();
+            configuration.setBaseDirPath(baseDirRealPath.toString());
         }
 
         return configuration;
