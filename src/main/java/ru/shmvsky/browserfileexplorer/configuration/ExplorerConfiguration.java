@@ -1,9 +1,9 @@
 package ru.shmvsky.browserfileexplorer.configuration;
 
 public class ExplorerConfiguration {
-    private String title = "File Explorer";
-    private String description = "Browser File Explorer in your Web Browser!";
-    private String baseDirPath = "/";
+    private String title;
+    private String description;
+    private String baseDirPath;
 
     public String getTitle() {
         return title;
@@ -37,4 +37,5 @@ public class ExplorerConfiguration {
                 ", baseDirPath='" + baseDirPath + '\'' +
                 '}';
     }
+
 }

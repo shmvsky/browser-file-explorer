@@ -1,4 +1,4 @@
-package ru.shmvsky.browserfileexplorer.model;
+package ru.shmvsky.browserfileexplorer.vo;
 
 import java.io.File;
 

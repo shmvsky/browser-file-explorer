@@ -1,11 +1,17 @@
 package ru.shmvsky.browserfileexplorer.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+import ru.shmvsky.browserfileexplorer.validation.RealPath;
 
-@ConfigurationProperties(prefix = "bfe")
+@ConfigurationProperties(prefix = "file-explorer")
+@Validated
 public class ExplorerProperties {
-    private String title;
-    private String description;
+    private String title = "File Explorer";
+
+    private String description = "File Explorer in your Web Browser!";
+
+    @RealPath
     private String baseDirPath;
 
     public String getTitle() {

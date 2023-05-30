@@ -1,2 +1,7 @@
-bfe:
-  base-dir-path: /Users
+
+file-explorer:
+  base-dir-path: ${BASE_DIR_PATH:/}
+  title: ${TITLE:}
+  description: ${DESCRIPTION:}
+server:
+  port: 28080

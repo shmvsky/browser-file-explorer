@@ -1,11 +1,10 @@
 package ru.shmvsky.browserfileexplorer.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.shmvsky.browserfileexplorer.configuration.ExplorerConfiguration;
 import ru.shmvsky.browserfileexplorer.exception.ExplorerRuntimeException;
-import ru.shmvsky.browserfileexplorer.model.ContentVO;
-import ru.shmvsky.browserfileexplorer.model.FileVO;
+import ru.shmvsky.browserfileexplorer.vo.ContentVO;
+import ru.shmvsky.browserfileexplorer.vo.FileVO;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +17,11 @@ import java.util.stream.Collectors;
 @Service
 public class ExplorerService {
 
-    @Autowired
     private ExplorerConfiguration explorerConfiguration;
+
+    public ExplorerService(ExplorerConfiguration explorerConfiguration) {
+        this.explorerConfiguration = explorerConfiguration;
+    }
 
     private File getDirectory(String dirPath) throws ExplorerRuntimeException {
 
@@ -30,17 +32,14 @@ public class ExplorerService {
             throw new ExplorerRuntimeException("Incorrect path");
         }
 
-        Path baseDirPath = Paths.get(explorerConfiguration.getBaseDirPath());
-
-        Path dirPathResolved = baseDirPath.resolve(dirPathObj);
-
         Path realDirPath;
         try {
-            realDirPath = dirPathResolved.toRealPath();
+            realDirPath = dirPathObj.toRealPath();
         } catch (IOException | SecurityException ex) {
             throw new ExplorerRuntimeException("Folder does not exist");
         }
 
+        Path baseDirPath = Paths.get(explorerConfiguration.getBaseDirPath());
         if (realDirPath.compareTo(baseDirPath) < 0) {
             throw new ExplorerRuntimeException("No access");
         }
@@ -50,7 +49,7 @@ public class ExplorerService {
 
     private File getParentDir(File dir, File baseDir) {
         File parentDir = dir.getParentFile();
-        if (!parentDir.equals(baseDir) && dir.getParentFile() != null && parentDir.compareTo(baseDir) > 0) {
+        if (parentDir != null && !parentDir.equals(baseDir) && parentDir.compareTo(baseDir) > 0) {
             return parentDir;
         }
         return baseDir;
@@ -78,7 +77,7 @@ public class ExplorerService {
         return meta;
     }
 
-    public ContentVO buildContent(String dirPath) throws ExplorerRuntimeException {
+    public ContentVO buildContent(String dirPath) {
         File dir = getDirectory(dirPath);
         File baseDir = new File(explorerConfiguration.getBaseDirPath());
         File parentDir = getParentDir(dir, baseDir);
