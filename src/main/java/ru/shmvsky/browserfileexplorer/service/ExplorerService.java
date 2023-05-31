@@ -3,8 +3,8 @@ package ru.shmvsky.browserfileexplorer.service;
 import org.springframework.stereotype.Service;
 import ru.shmvsky.browserfileexplorer.configuration.ExplorerConfiguration;
 import ru.shmvsky.browserfileexplorer.exception.ExplorerRuntimeException;
-import ru.shmvsky.browserfileexplorer.vo.ContentVO;
-import ru.shmvsky.browserfileexplorer.vo.FileVO;
+import ru.shmvsky.browserfileexplorer.util.ExplorerUtils;
+import ru.shmvsky.browserfileexplorer.vo.FileModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,13 +17,13 @@ import java.util.stream.Collectors;
 @Service
 public class ExplorerService {
 
-    private ExplorerConfiguration explorerConfiguration;
+    private final ExplorerConfiguration explorerConfiguration;
 
     public ExplorerService(ExplorerConfiguration explorerConfiguration) {
         this.explorerConfiguration = explorerConfiguration;
     }
 
-    private File getDirectory(String dirPath) throws ExplorerRuntimeException {
+    private File getDirectory(String dirPath) {
 
         Path dirPathObj;
         try {
@@ -47,27 +47,31 @@ public class ExplorerService {
         return realDirPath.toFile();
     }
 
-    private File getParentDir(File dir, File baseDir) {
+    private String getParentDirPath(File dir, File baseDir) {
         File parentDir = dir.getParentFile();
         if (parentDir != null && !parentDir.equals(baseDir) && parentDir.compareTo(baseDir) > 0) {
-            return parentDir;
+            return ExplorerUtils.normalizePath(parentDir.getAbsolutePath());
         }
-        return baseDir;
+        return ExplorerUtils.normalizePath(baseDir.getAbsolutePath());
     }
 
-    private Deque<File> makeBreadCrumb(File dir, File baseDir) {
-        Deque<File> breadCrumb = new ArrayDeque<>();
-
+    private List<FileModel> makeBreadCrumb(File dir, File baseDir) {
+        List<FileModel> breadCrumb = new ArrayList<>();
         while (!dir.equals(baseDir)) {
-            breadCrumb.addFirst(dir);
+            breadCrumb.add(new FileModel(dir));
             dir = dir.getParentFile();
         }
-
+        Collections.reverse(breadCrumb);
         return breadCrumb;
     }
 
-    public List<File> getFiles(File dir) {
-        return Arrays.asList(dir.listFiles());
+    public List<FileModel> getFiles(File dir) {
+        if (dir.isFile()) {
+            throw new ExplorerRuntimeException("Cannot read files");
+        }
+        return Arrays.stream(dir.listFiles())
+                .map(FileModel::new)
+                .collect(Collectors.toList());
     }
 
     public Map<String, String> buildMeta() {
@@ -77,19 +81,18 @@ public class ExplorerService {
         return meta;
     }
 
-    public ContentVO buildContent(String dirPath) {
+    public Map<String, Object> buildContent(String dirPath) {
         File dir = getDirectory(dirPath);
-        File baseDir = new File(explorerConfiguration.getBaseDirPath());
-        File parentDir = getParentDir(dir, baseDir);
-        Deque<File> breadCrumb = makeBreadCrumb(dir, baseDir);
-        List<File> files = getFiles(dir);
+        File baseDir = getDirectory(explorerConfiguration.getBaseDirPath());
 
-        return new ContentVO(
-                FileVO.fromFile(baseDir),
-                FileVO.fromFile(parentDir),
-                breadCrumb.stream().map(FileVO::fromFile).collect(Collectors.toList()),
-                files.stream().map(FileVO::fromFile).collect(Collectors.toList())
-        );
+        Map<String, Object> content = new HashMap<>();
+
+        content.put("baseDirPath", explorerConfiguration.getBaseDirPath());
+        content.put("parentDirPath", getParentDirPath(dir, baseDir));
+        content.put("breadCrumb", makeBreadCrumb(dir, baseDir));
+        content.put("files", getFiles(dir));
+
+        return content;
     }
 
 }

@@ -1,5 +1,6 @@
 package ru.shmvsky.browserfileexplorer.configuration;
 
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 import ru.shmvsky.browserfileexplorer.validation.RealPath;
@@ -12,6 +13,7 @@ public class ExplorerProperties {
     private String description = "File Explorer in your Web Browser!";
 
     @RealPath
+    @NotBlank
     private String baseDirPath;
 
     public String getTitle() {

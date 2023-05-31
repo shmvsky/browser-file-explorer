@@ -16,16 +16,16 @@
     <section class="section pt-0">
         <nav class="breadcrumb">
             <ul>
-                <li><a href="/file-explorer?dir=${content.baseDirectory.getPath()}">$</a></li>
-                <#list content.breadCrumb as e>
-                    <li><a href="/file-explorer?dir=${e.getPath()}">${e.getName()}</a></li>
+                <li><a href="/file-explorer?dir=${content.baseDirPath}">$</a></li>
+                <#list content.breadCrumb as file>
+                    <li><a href="/file-explorer?dir=${file.getPath()}">${file.getName()}</a></li>
                 </#list>
             </ul>
         </nav>
         <div class="">
             <div class="tag is-size-6 mr-4 mb-4">
                     <span class="icon material-symbols-outlined">folder</span>
-                <a class="is-link" href="/file-explorer?dir=${content.getParentDirectory().getPath()}">..</a>
+                <a class="is-link" href="/file-explorer?dir=${content.parentDirPath}">..</a>
             </div>
             <#list content.files as file>
                 <div class="tag is-size-6 mr-4 mb-4">

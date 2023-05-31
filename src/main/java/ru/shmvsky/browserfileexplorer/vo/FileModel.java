@@ -1,17 +1,18 @@
 package ru.shmvsky.browserfileexplorer.vo;
 
+import ru.shmvsky.browserfileexplorer.util.ExplorerUtils;
+
 import java.io.File;
 
-public final class FileVO {
+public final class FileModel {
     private final String path;
     private final String name;
-
     private final boolean isFile;
 
-    public FileVO(String path, String name, boolean isFile) {
-        this.path = path.replace("\\", "/");
-        this.name = name;
-        this.isFile = isFile;
+    public FileModel(File file) {
+        this.path = ExplorerUtils.normalizePath(file.getAbsolutePath());
+        this.name = file.getName();
+        this.isFile = file.isFile();
     }
 
     public String getPath() {
@@ -24,10 +25,6 @@ public final class FileVO {
 
     public boolean isFile() {
         return isFile;
-    }
-
-    public static FileVO fromFile(File file) {
-        return new FileVO(file.getAbsolutePath(), file.getName(), file.isFile());
     }
 
 }
